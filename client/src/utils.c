@@ -19,8 +19,8 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 int crear_conexion(char *ip, char* puerto)
 {
 	struct addrinfo hints;
-	struct addrinfo *server_info;
-
+	struct addrinfo *server_info, *p;
+	
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -32,7 +32,19 @@ int crear_conexion(char *ip, char* puerto)
 	int socket_cliente = 0;
 
 	// Ahora que tenemos el socket, vamos a conectarlo
+	for (p = server_info; p != NULL; p = p->ai_next) {
+		socket_cliente = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+		
+		if (connect(socket_cliente, p->ai_addr, p->ai_addrlen) == 0)
+			break; // Conexión exitosa
 
+		close(socket_cliente);
+	}
+
+	if (p == NULL) {
+		fprintf(stderr, "No se pudo conectar al servidor\n");
+		exit(EXIT_FAILURE);
+	}
 
 	freeaddrinfo(server_info);
 
